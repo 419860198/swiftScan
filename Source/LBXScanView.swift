@@ -145,7 +145,7 @@ open class LBXScanView: UIView {
 		let openLightBtn = UIButton()
 		openLightBtn.setImage(self.openLightImg, for: .normal)
 		openLightBtn.setImage(self.openLightImgSelected, for: .selected)
-		openLightBtn.frame = CGRect(x: 0, y: 0, width: 54, height: 80)
+		openLightBtn.frame = CGRect(x: 0, y: 0, width: 27, height: 40)
 		var centerPoint = self.center
 		openLightBtn.center = CGPoint(x: centerPoint.x, y: centerPoint.y - 50)
 		self.addSubview(openLightBtn)
