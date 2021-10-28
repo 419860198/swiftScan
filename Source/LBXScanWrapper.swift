@@ -33,13 +33,15 @@ public struct LBXScanResult {
 
 
 
-open class LBXScanWrapper: NSObject,AVCaptureMetadataOutputObjectsDelegate {
+open class LBXScanWrapper: NSObject,AVCaptureMetadataOutputObjectsDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
     
     let device = AVCaptureDevice.default(for: AVMediaType.video)
     var input: AVCaptureDeviceInput?
-    var output: AVCaptureMetadataOutput
+	var output: AVCaptureMetadataOutput
+	/// 用来判断光线的
+	let videoOutput: AVCaptureVideoDataOutput = AVCaptureVideoDataOutput()
 
-    let session = AVCaptureSession()
+	let session = AVCaptureSession()
     var previewLayer: AVCaptureVideoPreviewLayer?
     var stillImageOutput: AVCaptureStillImageOutput
 
@@ -57,6 +59,9 @@ open class LBXScanWrapper: NSObject,AVCaptureMetadataOutputObjectsDelegate {
     
     //连续扫码
     var supportContinuous = false
+	
+	// 未打开闪光灯的情况下, 光线太暗回调
+	var brightnessIsTooDackBlock: (Bool) -> Void = {_ in}
     
     
     /**
@@ -100,6 +105,11 @@ open class LBXScanWrapper: NSObject,AVCaptureMetadataOutputObjectsDelegate {
         if session.canAddOutput(output) {
             session.addOutput(output)
         }
+		
+		if session.canAddOutput(videoOutput) {
+			session.addOutput(videoOutput)
+			videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue.main)
+		}
 
         if session.canAddOutput(stillImageOutput) {
             session.addOutput(stillImageOutput)
@@ -146,6 +156,21 @@ open class LBXScanWrapper: NSObject,AVCaptureMetadataOutputObjectsDelegate {
                                from connection: AVCaptureConnection) {
         captureOutput(output, didOutputMetadataObjects: metadataObjects, from: connection)
     }
+	
+	public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+		guard let exif = CMGetAttachment(sampleBuffer, key: kCGImagePropertyExifDictionary, attachmentModeOut: nil) as? [String: Any] else {
+			return
+		}
+		guard let brightnessValue = exif["BrightnessValue"] as? NSNumber else {
+			return
+		}
+		/// 亮度不够 且 闪光灯没有打开
+		if brightnessValue.doubleValue < 0 && !torchIsOn() {
+			brightnessIsTooDackBlock(true)
+		} else {
+			brightnessIsTooDackBlock(false)
+		}
+	}
     
     func start() {
         if !session.isRunning {
@@ -279,6 +304,11 @@ open class LBXScanWrapper: NSObject,AVCaptureMetadataOutputObjectsDelegate {
         let torch = input?.device.torchMode == .off
         setTorch(torch: torch)
     }
+	
+	/// 闪光灯是否打开
+	open func torchIsOn() -> Bool {
+		return input?.device.torchMode == .on
+	}
     
     //MARK: ------获取系统默认支持的码的类型
     static func defaultMetaDataObjectTypes() -> [AVMetadataObject.ObjectType] {
