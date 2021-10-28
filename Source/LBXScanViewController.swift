@@ -90,15 +90,26 @@ open class LBXScanViewController: UIViewController {
                                      isCaptureImg: isNeedCodeImage,
                                      cropRect: cropRect,
                                      success: { [weak self] (arrayResult) -> Void in
-                                        guard let strongSelf = self else {
-                                            return
-                                        }
-                                        if !strongSelf.isSupportContinuous {
-                                            // 停止扫描动画
-                                            strongSelf.qRScanView?.stopScanAnimation()
-                                        }
-                                        strongSelf.handleCodeResult(arrayResult: arrayResult)
-                                     })
+                                         guard let strongSelf = self else {
+                                             return
+                                         }
+                                         // 停止扫描动画
+                                         strongSelf.qRScanView?.stopScanAnimation()
+                                         strongSelf.handleCodeResult(arrayResult: arrayResult)
+											strongSelf.qRScanView?.hideOpenLightBtn()
+            })
+            
+			scanObj?.brightnessIsTooDackBlock = {[weak self] dark in
+				guard let `self` = self else { return }
+				if dark {
+					self.qRScanView?.showOpenLightBtn()
+					self.qRScanView?.openLightBtn?.addTarget(self, action: #selector(self.onLight), for: .touchUpInside)
+				} else {
+					if self.scanObj?.input?.device.torchMode == .off {
+						self.qRScanView?.hideOpenLightBtn()
+					}
+				}
+			}
         }
         
         scanObj?.supportContinuous = isSupportContinuous;
@@ -121,6 +132,15 @@ open class LBXScanViewController: UIViewController {
         }
         qRScanView?.deviceStartReadying(readyStr: readyString)
     }
+	
+	@objc func onLight() {
+		self.scanObj?.changeTorch()
+		if self.scanObj?.input?.device.torchMode == .on {
+			self.qRScanView?.openLightBtn?.isSelected = true
+		} else {
+			self.qRScanView?.hideOpenLightBtn()
+		}
+	}
    
 
     /**
