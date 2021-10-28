@@ -33,6 +33,13 @@ open class LBXScanView: UIView {
 
     // 记录动画状态
     var isAnimationing = false
+	
+	/// 打开灯光的图标
+	public var openLightImg: UIImage?
+	/// 打开灯光的图标 已打开
+	public var openLightImgSelected: UIImage?
+	
+	var openLightBtn: UIButton?
     
     /**
     初始化扫描界面
@@ -131,6 +138,25 @@ open class LBXScanView: UIView {
         default: break
         }
     }
+	
+	// 显示打开闪光灯按钮
+	func showOpenLightBtn() {
+		guard openLightBtn == nil else { return }
+		let openLightBtn = UIButton()
+		openLightBtn.setImage(self.openLightImg, for: .normal)
+		openLightBtn.setImage(self.openLightImgSelected, for: .selected)
+		openLightBtn.frame = CGRect(x: 0, y: 0, width: 54, height: 80)
+		var centerPoint = self.center
+		openLightBtn.center = CGPoint(x: centerPoint.x, y: centerPoint.y - 50)
+		self.addSubview(openLightBtn)
+		self.openLightBtn = openLightBtn
+	}
+	
+	// 关闭打开闪光灯按钮
+	func hideOpenLightBtn() {
+		self.openLightBtn?.removeFromSuperview()
+		self.openLightBtn = nil
+	}
     
     // Only override drawRect: if you perform custom drawing.
     // An empty implementation adversely affects performance during animation.
@@ -184,7 +210,7 @@ open class LBXScanView: UIView {
         if viewStyle.isNeedShowRetangle {
             // 中间画矩形(正方形)
             context.setStrokeColor(viewStyle.colorRetangleLine.cgColor)
-            context.setLineWidth(viewStyle.widthRetangleLine)
+            context.setLineWidth(1)
             context.addRect(CGRect(x: XRetangleLeft, y: YMinRetangle, width: sizeRetangle.width, height: sizeRetangle.height))
 
             // CGContextMoveToPoint(context, XRetangleLeft, YMinRetangle);
